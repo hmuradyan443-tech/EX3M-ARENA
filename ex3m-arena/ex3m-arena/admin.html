@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Результаты турниров — EX3M ARENA</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo"><span class="mark"></span>EX<span class="three">3</span>M ARENA</a>
+    <nav>
+      <a href="index.html">Турниры</a>
+      <a href="rules.html">Правила</a>
+      <a href="support.html">Поддержка</a>
+    </nav>
+    <span id="auth-slot"></span>
+  </div>
+</header>
+
+<div class="wrap" style="padding-top:40px;padding-bottom:56px;max-width:720px">
+  <div class="eyebrow">Только для организаторов</div>
+  <h1 style="font-family:var(--font-display);text-transform:uppercase;font-size:28px;margin:0 0 20px">Внесение результатов</h1>
+
+  <div id="access-check" class="panel">
+    <p class="rules-text">Проверяем доступ…</p>
+  </div>
+
+  <div id="admin-area" style="display:none">
+    <div class="panel">
+      <h3>Выбери турнир</h3>
+      <div class="field">
+        <select id="tournament-select"></select>
+      </div>
+    </div>
+
+    <div class="panel" id="match-select-panel" style="display:none">
+      <h3>Номер матча (карты)</h3>
+      <p class="rules-text" style="margin-bottom:14px">Если на турнире 3 карты — внеси результаты за матч 1, потом за матч 2, потом за матч 3. Итоговая таблица на сайте посчитает сумму автоматически.</p>
+      <div class="field">
+        <select id="match-select">
+          <option value="1">Матч 1</option>
+          <option value="2">Матч 2</option>
+          <option value="3">Матч 3</option>
+          <option value="4">Матч 4</option>
+          <option value="5">Матч 5</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel" id="results-panel" style="display:none">
+      <h3>Команды и результаты (этот матч)</h3>
+      <p class="rules-text" style="margin-bottom:14px">Впиши место (1, 2, 3…) и количество киллов для каждой команды за выбранный матч.</p>
+      <div id="results-table"></div>
+      <button id="save-results" class="btn btn-primary btn-block" style="margin-top:16px">Сохранить результаты</button>
+      <p class="form-note" id="save-msg"></p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="auth-ui.js"></script>
+<script>
+const POINTS_TABLE = {1:10,2:8,3:7,4:6,5:5,6:4,7:3,8:2};
+function placementPoints(p) {
+  if (!p) return 0;
+  if (POINTS_TABLE[p] !== undefined) return POINTS_TABLE[p];
+  if (p >= 9 && p <= 16) return 1;
+  return 0;
+}
+
+let CURRENT_USER = null;
+let SELECTED_SLUG = null;
+let TEAMS = [];
+
+async function checkAccess() {
+  const { data: { session } } = await sb.auth.getSession();
+  CURRENT_USER = session ? session.user : null;
+  const box = document.getElementById('access-check');
+
+  if (!CURRENT_USER) {
+    box.innerHTML = `<p class="rules-text">Нужно войти в аккаунт.</p><a class="btn btn-primary btn-block" href="auth.html?redirect=admin.html" style="display:block;text-align:center;margin-top:10px">Войти</a>`;
+    return;
+  }
+
+  const { data: adminRow } = await sb.from('admins').select('user_id').eq('user_id', CURRENT_USER.id).maybeSingle();
+  if (!adminRow) {
+    box.innerHTML = `<p class="rules-text">У этого аккаунта нет прав администратора.</p>`;
+    return;
+  }
+
+  box.style.display = 'none';
+  document.getElementById('admin-area').style.display = 'block';
+  loadTournamentsList();
+}
+
+async function loadTournamentsList() {
+  const { data: tournaments } = await sb.from('tournaments').select('slug, name').order('created_at', { ascending: false });
+  const select = document.getElementById('tournament-select');
+  select.innerHTML = '<option value="">— выбери турнир —</option>' +
+    (tournaments || []).map(t => `<option value="${t.slug}">${t.name}</option>`).join('');
+  select.addEventListener('change', () => {
+    if (select.value) {
+      SELECTED_SLUG = select.value;
+      document.getElementById('match-select-panel').style.display = 'block';
+      loadTeamsForTournament();
+    } else {
+      document.getElementById('match-select-panel').style.display = 'none';
+      document.getElementById('results-panel').style.display = 'none';
+    }
+  });
+  document.getElementById('match-select').addEventListener('change', loadTeamsForTournament);
+}
+
+async function loadTeamsForTournament() {
+  const slug = SELECTED_SLUG;
+  const matchNumber = parseInt(document.getElementById('match-select').value);
+  const { data: regs } = await sb.from('registrations').select('team_name').eq('tournament_slug', slug).order('created_at');
+  const { data: existingResults } = await sb.from('results').select('*').eq('tournament_slug', slug).eq('match_number', matchNumber);
+
+  const resultsMap = {};
+  (existingResults || []).forEach(r => { resultsMap[r.team_name] = r; });
+
+  TEAMS = (regs || []).map(r => r.team_name);
+
+  const container = document.getElementById('results-table');
+  if (!TEAMS.length) {
+    container.innerHTML = '<p class="form-note">На этот турнир пока нет зарегистрированных команд.</p>';
+    document.getElementById('results-panel').style.display = 'block';
+    return;
+  }
+
+  container.innerHTML = TEAMS.map((team, i) => {
+    const existing = resultsMap[team] || {};
+    return `
+      <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)">
+        <span style="font-size:13px">${team}</span>
+        <input type="number" min="1" placeholder="Место" data-team="${team}" class="input-placement" value="${existing.placement || ''}" style="background:var(--bg-raised);border:1px solid var(--line-strong);border-radius:3px;padding:6px 8px;color:var(--text);font-size:13px">
+        <input type="number" min="0" placeholder="Киллы" data-team="${team}" class="input-kills" value="${existing.kills || ''}" style="background:var(--bg-raised);border:1px solid var(--line-strong);border-radius:3px;padding:6px 8px;color:var(--text);font-size:13px">
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('results-panel').style.display = 'block';
+  document.getElementById('save-msg').textContent = '';
+}
+
+document.getElementById('save-results').addEventListener('click', async () => {
+  const msg = document.getElementById('save-msg');
+  const matchNumber = parseInt(document.getElementById('match-select').value);
+  const rows = TEAMS.map(team => {
+    const placementEl = document.querySelector(`.input-placement[data-team="${CSS.escape(team)}"]`);
+    const killsEl = document.querySelector(`.input-kills[data-team="${CSS.escape(team)}"]`);
+    const placement = placementEl.value ? parseInt(placementEl.value) : null;
+    const kills = killsEl.value ? parseInt(killsEl.value) : 0;
+    return { tournament_slug: SELECTED_SLUG, team_name: team, match_number: matchNumber, placement, kills };
+  }).filter(r => r.placement !== null || r.kills > 0);
+
+  if (!rows.length) {
+    msg.textContent = 'Нечего сохранять — впиши хотя бы одно место или количество киллов.';
+    msg.style.color = 'var(--red)';
+    return;
+  }
+
+  const { error } = await sb.from('results').upsert(rows, { onConflict: 'tournament_slug,team_name,match_number' });
+
+  if (error) {
+    msg.textContent = 'Ошибка: ' + error.message;
+    msg.style.color = 'var(--red)';
+  } else {
+    msg.textContent = 'Результаты матча ' + matchNumber + ' сохранены.';
+    msg.style.color = 'var(--cyan)';
+  }
+});
+
+checkAccess();
+</script>
+
+</body>
+</html>

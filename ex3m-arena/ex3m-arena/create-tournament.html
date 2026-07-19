@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Организовать турнир — EX3M ARENA</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo"><span class="mark"></span>EX<span class="three">3</span>M ARENA</a>
+    <nav>
+      <a href="index.html">Турниры</a>
+      <a href="rules.html">Правила</a>
+      <a href="support.html">Поддержка</a>
+      <a href="admin.html">Результаты</a>
+    </nav>
+    <span id="auth-slot"></span>
+  </div>
+</header>
+
+<div class="wrap" style="padding-top:40px;padding-bottom:56px;max-width:600px">
+  <div class="eyebrow">Стать организатором</div>
+  <h1 style="font-family:var(--font-display);text-transform:uppercase;font-size:28px;margin:0 0 12px">Организовать турнир</h1>
+  <p style="color:var(--text-dim);font-size:14px;margin:0 0 24px">Заполни форму — заявка попадёт на рассмотрение администрации. После одобрения турнир появится на сайте.</p>
+
+  <div id="need-login" class="panel" style="display:none">
+    <p class="rules-text">Чтобы подать заявку на турнир, сначала войди в аккаунт.</p>
+    <a class="btn btn-primary btn-block" href="auth.html?redirect=create-tournament.html" style="display:block;text-align:center;margin-top:10px">Войти / Зарегистрироваться</a>
+  </div>
+
+  <div class="panel" id="form-panel" style="display:none">
+    <form id="request-form">
+      <div class="field">
+        <label>Название турнира</label>
+        <input type="text" id="f-name" placeholder="Например, MIDNIGHT CUP #1" required>
+      </div>
+      <div class="field">
+        <label>Формат</label>
+        <select id="f-format">
+          <option value="SQUAD">Squad</option>
+          <option value="DUO">Duo</option>
+          <option value="SOLO">Solo</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Тир / уровень</label>
+        <input type="text" id="f-tiers" placeholder="Например, TIER 1, 2" value="TIER 1, 2">
+      </div>
+      <div class="field">
+        <label>Призовой фонд</label>
+        <input type="text" id="f-prize" placeholder="Например, 200$ или 1000 UC" required>
+      </div>
+      <div class="field">
+        <label>Дата старта</label>
+        <input type="text" id="f-date" placeholder="Например, 5 августа" required>
+      </div>
+      <div class="field">
+        <label>Время старта</label>
+        <input type="text" id="f-time" placeholder="Например, 19:00" required>
+      </div>
+      <div class="field">
+        <label>Карта(ы)</label>
+        <input type="text" id="f-map" placeholder="Например, Erangel, Miramar, Sanhok">
+      </div>
+      <div class="field">
+        <label>Размер команды</label>
+        <input type="number" id="f-teamsize" value="4" min="1" max="4">
+      </div>
+      <div class="field">
+        <label>Количество слотов (команд)</label>
+        <input type="number" id="f-slots" value="32" min="1">
+      </div>
+      <div class="field">
+        <label>Описание турнира</label>
+        <input type="text" id="f-desc" placeholder="Коротко о турнире">
+      </div>
+      <div class="field">
+        <label>Твой Discord/Telegram для связи</label>
+        <input type="text" id="f-contact" placeholder="@nickname" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Подать заявку</button>
+    </form>
+    <p class="form-note" id="request-msg"></p>
+  </div>
+
+  <div class="panel" id="my-requests-panel" style="display:none">
+    <h3>Мои заявки</h3>
+    <div id="my-requests-list"></div>
+  </div>
+</div>
+
+<footer id="footer">
+  <div class="wrap footer-inner">
+    <span>© 2026 EX3M ARENA</span>
+    <div class="footer-links">
+      <a href="rules.html">Правила</a>
+      <a href="https://t.me/ex3marena" target="_blank">Telegram</a>
+      <a href="https://discord.gg/EPPXzFMrc" target="_blank">Discord</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="auth-ui.js"></script>
+<script>
+const STATUS_RU = { pending: "На рассмотрении", approved: "Одобрена", rejected: "Отклонена" };
+const STATUS_COLOR = { pending: "var(--amber)", approved: "var(--cyan)", rejected: "var(--red)" };
+let CURRENT_USER = null;
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  CURRENT_USER = session ? session.user : null;
+
+  if (!CURRENT_USER) {
+    document.getElementById('need-login').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('form-panel').style.display = 'block';
+  loadMyRequests();
+}
+
+async function loadMyRequests() {
+  const { data } = await sb.from('tournament_requests').select('*').eq('requested_by', CURRENT_USER.id).order('created_at', { ascending: false });
+  if (!data || !data.length) return;
+
+  document.getElementById('my-requests-panel').style.display = 'block';
+  document.getElementById('my-requests-list').innerHTML = data.map(r => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px">
+      <span>${r.name}</span>
+      <span style="font-family:var(--font-mono);font-size:11px;color:${STATUS_COLOR[r.status]}">${STATUS_RU[r.status]}</span>
+    </div>
+  `).join('');
+
+  if (data.some(r => r.status === 'approved')) {
+    document.getElementById('my-requests-list').innerHTML +=
+      `<p class="form-note" style="text-align:left;margin-top:10px">Твой турнир одобрен — вносить результаты можно на <a href="admin.html" style="color:var(--amber)">странице результатов</a>.</p>`;
+  }
+}
+
+document.getElementById('request-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('request-msg');
+
+  const payload = {
+    requested_by: CURRENT_USER.id,
+    name: document.getElementById('f-name').value.trim(),
+    format: document.getElementById('f-format').value,
+    tiers: document.getElementById('f-tiers').value.trim() || 'TIER 1, 2',
+    prize: document.getElementById('f-prize').value.trim(),
+    date_text: document.getElementById('f-date').value.trim(),
+    time_text: document.getElementById('f-time').value.trim(),
+    map: document.getElementById('f-map').value.trim(),
+    team_size: parseInt(document.getElementById('f-teamsize').value) || 4,
+    slots: parseInt(document.getElementById('f-slots').value) || 32,
+    description: document.getElementById('f-desc').value.trim(),
+    contact: document.getElementById('f-contact').value.trim(),
+  };
+
+  const { error } = await sb.from('tournament_requests').insert(payload);
+
+  if (error) {
+    msg.textContent = 'Ошибка: ' + error.message;
+    msg.style.color = 'var(--red)';
+  } else {
+    msg.textContent = 'Заявка отправлена на рассмотрение!';
+    msg.style.color = 'var(--cyan)';
+    document.getElementById('request-form').reset();
+    loadMyRequests();
+  }
+});
+
+init();
+</script>
+
+</body>
+</html>
