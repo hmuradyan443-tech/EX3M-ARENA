@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Поддержка — EX3M ARENA</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo"><span class="mark"></span>EX<span class="three">3</span>M ARENA</a>
+    <nav>
+      <a href="index.html" data-i18n="nav_tournaments">Турниры</a>
+      <a href="rules.html" data-i18n="nav_rules">Правила</a>
+      <a href="support.html" data-i18n="nav_support">Поддержка</a>
+    </nav>
+    <div class="lang-switch">
+      <button class="lang-btn" data-lang="ru" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" data-lang="ka" onclick="setLang('ka')">KA</button>
+      <button class="lang-btn" data-lang="hy" onclick="setLang('hy')">HY</button>
+    </div>
+    <span id="auth-slot"></span>
+  </div>
+</header>
+
+<div class="wrap" style="padding-top:48px;padding-bottom:56px;max-width:760px">
+  <div class="eyebrow">Мы на связи</div>
+  <h1 style="font-family:var(--font-display);text-transform:uppercase;font-size:32px;margin:0 0 12px" data-i18n="support_title">Поддержка</h1>
+  <p style="color:var(--text-dim);font-size:15px;margin:0 0 32px;max-width:520px" data-i18n="support_desc">
+    Вопросы по регистрации, регламенту турнира или проблема во время матча — пиши в Discord или Telegram, отвечаем быстро.
+  </p>
+
+  <div class="support-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:40px">
+    <a href="https://discord.gg/EPPXzFMrc" target="_blank" class="panel" style="text-decoration:none;display:block;margin-bottom:0">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <i class="ti ti-brand-discord" style="font-size:24px;color:var(--cyan)"></i>
+        <h3 style="margin:0;color:var(--text)">Discord</h3>
+      </div>
+      <p style="font-size:13px;color:var(--text-dim);margin:0 0 14px" data-i18n="support_discord_desc">Общий чат сообщества, объявления и быстрая поддержка по турнирам.</p>
+      <span class="btn btn-block" style="display:block;text-align:center" data-i18n="btn_open_discord">Перейти на сервер</span>
+    </a>
+
+    <a href="https://t.me/ex3marena" target="_blank" class="panel" style="text-decoration:none;display:block;margin-bottom:0">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <i class="ti ti-brand-telegram" style="font-size:24px;color:var(--amber)"></i>
+        <h3 style="margin:0;color:var(--text)">Telegram</h3>
+      </div>
+      <p style="font-size:13px;color:var(--text-dim);margin:0 0 14px" data-i18n="support_telegram_desc">Новости турниров и связь с организаторами.</p>
+      <span class="btn btn-block" style="display:block;text-align:center" data-i18n="btn_open_telegram">Открыть Telegram</span>
+    </a>
+  </div>
+
+  <div class="section-head" style="margin-bottom:20px">
+    <h2 style="font-size:20px" data-i18n="faq_title">Частые вопросы</h2>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div class="panel" style="margin-bottom:0">
+      <h3 style="color:var(--text);font-size:15px;text-transform:none;margin:0 0 8px" data-i18n="faq_q1">Как зарегистрировать команду на турнир?</h3>
+      <p style="font-size:13px;color:var(--text-dim);margin:0" data-i18n="faq_a1">Войди в аккаунт, открой нужный турнир со статусом «Регистрация» и заполни форму справа на странице турнира.</p>
+    </div>
+    <div class="panel" style="margin-bottom:0">
+      <h3 style="color:var(--text);font-size:15px;text-transform:none;margin:0 0 8px" data-i18n="faq_q2">Не могу зайти в лобби матча</h3>
+      <p style="font-size:13px;color:var(--text-dim);margin:0" data-i18n="faq_a2">Напиши в Discord с названием команды и турнира — организаторы помогут прямо во время игры.</p>
+    </div>
+    <div class="panel" style="margin-bottom:0">
+      <h3 style="color:var(--text);font-size:15px;text-transform:none;margin:0 0 8px" data-i18n="faq_q3">Когда приходят призовые?</h3>
+      <p style="font-size:13px;color:var(--text-dim);margin:0" data-i18n="faq_a3">Выплаты обрабатываются после подтверждения итоговых результатов турнира. Точные сроки уточняй в Discord.</p>
+    </div>
+    <div class="panel" style="margin-bottom:0">
+      <h3 style="color:var(--text);font-size:15px;text-transform:none;margin:0 0 8px" data-i18n="faq_q4">Можно отменить регистрацию команды?</h3>
+      <p style="font-size:13px;color:var(--text-dim);margin:0" data-i18n="faq_a4">Да, напиши организаторам в Discord или Telegram с названием команды и турнира.</p>
+    </div>
+  </div>
+</div>
+
+<footer id="footer">
+  <div class="wrap footer-inner">
+    <span>© 2026 EX3M ARENA</span>
+    <div class="footer-links">
+      <a href="rules.html" data-i18n="footer_rules">Правила</a>
+      <a href="https://t.me/ex3marena" target="_blank" data-i18n="footer_telegram">Telegram</a>
+      <a href="https://discord.gg/EPPXzFMrc" target="_blank" data-i18n="footer_discord">Discord</a>
+    </div>
+  </div>
+</footer>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="auth-ui.js"></script>
+
+</body>
+</html>

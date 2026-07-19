@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Турнир — EX3M ARENA</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo"><span class="mark"></span>EX<span class="three">3</span>M ARENA</a>
+    <nav>
+      <a href="index.html" data-i18n="nav_tournaments">Турниры</a>
+      <a href="rules.html" data-i18n="nav_rules">Правила</a>
+      <a href="support.html" data-i18n="nav_support">Поддержка</a>
+    </nav>
+    <div class="lang-switch">
+      <button class="lang-btn" data-lang="ru" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" data-lang="ka" onclick="setLang('ka')">KA</button>
+      <button class="lang-btn" data-lang="hy" onclick="setLang('hy')">HY</button>
+    </div>
+    <span id="auth-slot"></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="breadcrumb"><a href="index.html" data-i18n="breadcrumb_tournaments">Турниры</a> / <span id="bc-name">...</span></div>
+
+  <div class="detail-head">
+    <div>
+      <span class="status" id="d-status"></span>
+      <h1 id="d-name"></h1>
+      <div class="tags" id="d-tags"></div>
+    </div>
+  </div>
+
+  <div class="detail-grid" id="detail-grid" style="display:none">
+    <div>
+      <div class="panel">
+        <h3 data-i18n="panel_about">О турнире</h3>
+        <p class="rules-text" id="d-desc"></p>
+      </div>
+      <div class="panel">
+        <h3 data-i18n="panel_rules">Регламент</h3>
+        <div class="rules-text"><ul id="d-rules"></ul></div>
+      </div>
+      <div class="panel">
+        <h3 data-i18n="panel_participants">Зарегистрированные команды</h3>
+        <div class="participants-list" id="d-participants"></div>
+      </div>
+      <div class="panel" id="results-panel-view" style="display:none">
+        <h3>Итоговая таблица</h3>
+        <div id="results-table-view"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel sidebar-prize">
+        <div class="lbl" data-i18n="prize_label">Призовой фонд</div>
+        <div class="amt" id="d-prize"></div>
+      </div>
+      <div class="panel">
+        <div class="info-row"><span class="k" data-i18n="info_date">Дата старта</span><span class="v" id="d-date"></span></div>
+        <div class="info-row"><span class="k" data-i18n="info_map">Карта</span><span class="v" id="d-map"></span></div>
+        <div class="info-row"><span class="k" data-i18n="info_format">Формат</span><span class="v" id="d-format"></span></div>
+        <div class="info-row"><span class="k" data-i18n="info_teamsize">Размер команды</span><span class="v" id="d-teamsize"></span></div>
+        <div class="info-row"><span class="k" data-i18n="info_slots">Слоты</span><span class="v" id="d-slots"></span></div>
+      </div>
+
+      <div class="panel" id="room-panel" style="display:none">
+        <h3 data-i18n="room_panel_title">Данные комнаты</h3>
+        <div class="info-row"><span class="k" data-i18n="room_id_label">ID комнаты</span><span class="v" id="room-id"></span></div>
+        <div class="info-row"><span class="k" data-i18n="room_password_label">Пароль</span><span class="v" id="room-password"></span></div>
+      </div>
+
+      <div class="panel" id="reg-panel">
+        <h3 data-i18n="panel_registration">Регистрация команды</h3>
+        <form id="reg-form">
+          <div class="field">
+            <label data-i18n="field_team_name">Название команды</label>
+            <input type="text" id="f-team" placeholder="Например, NOVA SQUAD" required>
+          </div>
+          <div class="field">
+            <label data-i18n="field_captain_id">Капитан — игровой ID</label>
+            <input type="text" id="f-gameid" placeholder="Например, 512xxxxxxx" required>
+          </div>
+          <div class="field">
+            <label data-i18n="field_contact">Discord или Telegram для связи</label>
+            <input type="text" id="f-contact" placeholder="@nickname" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" data-i18n="btn_register">Зарегистрироваться</button>
+        </form>
+        <p class="form-note" id="reg-msg"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="footer">
+  <div class="wrap footer-inner">
+    <span>© 2026 EX3M ARENA</span>
+    <div class="footer-links">
+      <a href="rules.html" data-i18n="footer_rules">Правила</a>
+      <a href="https://t.me/ex3marena" target="_blank" data-i18n="footer_telegram">Telegram</a>
+      <a href="https://discord.gg/EPPXzFMrc" target="_blank" data-i18n="footer_discord">Discord</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="auth-ui.js"></script>
+<script>
+const STATUS_LABEL = { reg: "Регистрация", live: "Идёт игра", done: "Завершён" };
+const STATUS_CLASS = { reg: "status-reg", live: "status-live", done: "status-done" };
+
+const params = new URLSearchParams(location.search);
+const slug = params.get('slug');
+let CURRENT_TOURNAMENT = null;
+let CURRENT_USER = null;
+
+async function loadTournament() {
+  const { data: tour, error } = await sb.from('tournaments').select('*').eq('slug', slug).single();
+  if (error || !tour) {
+    document.getElementById('d-name').textContent = 'Турнир не найден';
+    return;
+  }
+  CURRENT_TOURNAMENT = tour;
+
+  document.title = tour.name + " — EX3M ARENA";
+  document.getElementById('bc-name').textContent = tour.name;
+  document.getElementById('d-name').textContent = tour.name;
+  document.getElementById('d-status').textContent = t('status_' + tour.status) || STATUS_LABEL[tour.status];
+  document.getElementById('d-status').className = 'status ' + STATUS_CLASS[tour.status];
+  document.getElementById('d-tags').innerHTML = `<span class="tag">${tour.format}</span><span class="tag">${tour.tiers}</span><span class="tag">${tour.time_text}</span>`;
+  document.getElementById('d-desc').textContent = tour.description || '';
+  document.getElementById('d-rules').innerHTML = (tour.rules || []).map(r => `<li>${r}</li>`).join('');
+  document.getElementById('d-prize').textContent = tour.is_practice ? (t('no_prize') || 'Без приза') : tour.prize;
+  document.getElementById('d-date').textContent = tour.date_text + ', ' + tour.time_text;
+  document.getElementById('d-map').textContent = tour.map || '—';
+  document.getElementById('d-format').textContent = tour.format;
+  document.getElementById('d-teamsize').textContent = tour.team_size + ' игрок(а)';
+
+  const { data: regs } = await sb.from('registrations').select('team_name, captain_game_id, contact, created_at').eq('tournament_slug', slug).order('created_at');
+  const list = regs || [];
+  document.getElementById('d-slots').textContent = list.length + ' / ' + tour.slots;
+  document.getElementById('d-participants').innerHTML = list.length
+    ? list.map((p, i) => {
+        const dt = new Date(p.created_at);
+        const dateStr = dt.toLocaleDateString('ru-RU') + ' ' + dt.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+        return `<div class="participant participant-row">
+          <span class="n">${String(i+1).padStart(2,'0')}</span>
+          <div class="participant-info">
+            <div class="participant-team">${p.team_name}</div>
+            <div class="participant-meta">ID: ${p.captain_game_id} · ${p.contact}</div>
+          </div>
+          <span class="participant-date">${dateStr}</span>
+        </div>`;
+      }).join('')
+    : '<p class="form-note" style="text-align:left">Пока никто не зарегистрировался — будь первым.</p>';
+
+  document.getElementById('detail-grid').style.display = 'grid';
+
+  const { data: results } = await sb.from('results').select('*').eq('tournament_slug', slug);
+  if (results && results.length) {
+    const totals = {};
+    results.forEach(r => {
+      if (!totals[r.team_name]) totals[r.team_name] = { team_name: r.team_name, kills: 0, points: 0, matches: 0 };
+      totals[r.team_name].kills += r.kills;
+      totals[r.team_name].points += r.points;
+      totals[r.team_name].matches += 1;
+    });
+    const standings = Object.values(totals).sort((a, b) => b.points - a.points);
+
+    document.getElementById('results-panel-view').style.display = 'block';
+    document.getElementById('results-table-view').innerHTML = `
+      <div style="display:grid;grid-template-columns:24px 1fr 60px 60px 60px;gap:8px;font-size:11px;color:var(--text-faint);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--line)">
+        <span>#</span><span>Команда</span><span>Матчей</span><span>Киллы</span><span>Очки</span>
+      </div>
+      ${standings.map((r, i) => `
+        <div style="display:grid;grid-template-columns:24px 1fr 60px 60px 60px;gap:8px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--line);align-items:center">
+          <span style="color:var(--text-faint);font-family:var(--font-mono)">${i+1}</span>
+          <span>${r.team_name}</span>
+          <span style="font-family:var(--font-mono);color:var(--text-dim)">${r.matches}</span>
+          <span style="font-family:var(--font-mono);color:var(--text-dim)">${r.kills}</span>
+          <span style="font-family:var(--font-mono);color:var(--amber)">${r.points}</span>
+        </div>
+      `).join('')}
+    `;
+  }
+
+  if (tour.status !== 'reg') {
+    document.getElementById('reg-panel').innerHTML =
+      `<h3>${t('reg_closed_title') || 'Регистрация закрыта'}</h3><p class="rules-text">${t('reg_closed_text') || 'Регистрация на этот турнир уже недоступна.'}</p>`;
+    const { data: { session } } = await sb.auth.getSession();
+    CURRENT_USER = session ? session.user : null;
+    await checkOwnRegistration();
+  } else {
+    updateRegPanelForAuth();
+  }
+}
+
+async function updateRegPanelForAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  CURRENT_USER = session ? session.user : null;
+  if (!CURRENT_USER) {
+    document.getElementById('reg-panel').innerHTML =
+      `<h3>${t('panel_registration') || 'Регистрация команды'}</h3><p class="rules-text">${t('need_login_text') || 'Чтобы зарегистрировать команду, сначала войди в аккаунт.'}</p>` +
+      `<a class="btn btn-primary btn-block" href="auth.html?redirect=tournament.html%3Fslug%3D${slug}" style="display:block;text-align:center;margin-top:10px">${t('btn_login_register') || 'Войти / Зарегистрироваться'}</a>`;
+    return;
+  }
+  await checkOwnRegistration();
+}
+
+async function checkOwnRegistration() {
+  if (!CURRENT_USER) return;
+  const { data: myReg } = await sb.from('registrations').select('id').eq('tournament_slug', slug).eq('user_id', CURRENT_USER.id).maybeSingle();
+  if (myReg && CURRENT_TOURNAMENT && (CURRENT_TOURNAMENT.room_id || CURRENT_TOURNAMENT.room_password)) {
+    document.getElementById('room-id').textContent = CURRENT_TOURNAMENT.room_id || '—';
+    document.getElementById('room-password').textContent = CURRENT_TOURNAMENT.room_password || '—';
+    document.getElementById('room-panel').style.display = 'block';
+  }
+}
+
+document.getElementById('reg-form')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const msg = document.getElementById('reg-msg');
+  if (!CURRENT_USER) { msg.textContent = 'Сначала войди в аккаунт.'; msg.style.color = 'var(--red)'; return; }
+
+  const team_name = document.getElementById('f-team').value.trim();
+  const captain_game_id = document.getElementById('f-gameid').value.trim();
+  const contact = document.getElementById('f-contact').value.trim();
+
+  const { error } = await sb.from('registrations').insert({
+    tournament_slug: slug,
+    user_id: CURRENT_USER.id,
+    team_name, captain_game_id, contact
+  });
+
+  if (error) {
+    msg.textContent = 'Ошибка: ' + error.message;
+    msg.style.color = 'var(--red)';
+  } else {
+    msg.textContent = 'Заявка отправлена! Команда добавлена в список участников.';
+    msg.style.color = 'var(--cyan)';
+    document.getElementById('reg-form').reset();
+    loadTournament();
+  }
+});
+
+function onLangChange() {
+  if (CURRENT_TOURNAMENT) loadTournament();
+}
+
+loadTournament();
+</script>
+
+</body>
+</html>
