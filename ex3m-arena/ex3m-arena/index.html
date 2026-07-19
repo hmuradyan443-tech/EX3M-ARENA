@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EX3M ARENA — Турниры по PUBG Mobile</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo"><span class="mark"></span>EX<span class="three">3</span>M ARENA</a>
+    <nav>
+      <a href="index.html" data-i18n="nav_tournaments">Турниры</a>
+      <a href="rules.html" data-i18n="nav_rules">Правила</a>
+      <a href="support.html" data-i18n="nav_support">Поддержка</a>
+      <a href="create-tournament.html">Организовать турнир</a>
+      <a href="admin.html">Результаты</a>
+    </nav>
+    <div class="lang-switch">
+      <button class="lang-btn" data-lang="ru" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" data-lang="ka" onclick="setLang('ka')">KA</button>
+      <button class="lang-btn" data-lang="hy" onclick="setLang('hy')">HY</button>
+    </div>
+    <span id="auth-slot"></span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="zone-ring"></div>
+  <div class="wrap">
+    <div class="eyebrow" data-i18n="hero_eyebrow">Сезон 1 — регистрация открыта</div>
+    <h1><span data-i18n="hero_title_pre">Турниры по</span> <span>PUBG Mobile</span><br><span data-i18n="hero_title_post">с реальным призовым фондом</span></h1>
+    <p data-i18n="hero_desc">Собирай сквад, выбирай турнир по своему тиру и выходи в зону. Squad, duo и solo — каждую неделю.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" data-i18n="btn_view_tournaments" onclick="document.getElementById('tournaments').scrollIntoView({behavior:'smooth'})">Смотреть турниры</button>
+      <button class="btn" data-i18n="btn_how_works" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">Как это работает</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num" id="stat-count">—</div><div class="label" data-i18n="stat_label_count">Турнира сейчас</div></div>
+      <div class="hero-stat"><div class="num" id="stat-teams">—</div><div class="label" data-i18n="stat_label_teams">Команд зарегистрировано</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="tournaments">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 data-i18n="section_tournaments">Турниры PUBG Mobile</h2>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-filter="all" data-i18n="tab_all">Все</button>
+      <button class="tab" data-filter="reg" data-i18n="tab_reg">Регистрация</button>
+      <button class="tab" data-filter="live" data-i18n="tab_live">Идёт игра</button>
+      <button class="tab" data-filter="done" data-i18n="tab_done">Завершённые</button>
+    </div>
+    <div class="grid" id="tournament-grid"><p class="form-note" data-i18n="loading_tournaments">Загрузка турниров…</p></div>
+  </div>
+</section>
+
+<section class="section" id="practice" style="display:none">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 data-i18n="section_practice">Тренировочные матчи</h2>
+    </div>
+    <p style="font-size:13px;color:var(--text-faint);margin:-10px 0 20px" data-i18n="practice_desc">Без призового фонда — потренироваться перед турнирами.</p>
+    <div class="grid" id="practice-grid"></div>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="section-head"><h2 data-i18n="section_how">Как принять участие</h2></div>
+    <div class="steps">
+      <div class="step">
+        <div class="idx">01</div>
+        <h4 data-i18n="step1_title">Создай аккаунт</h4>
+        <p data-i18n="step1_desc">Регистрируйся по email — это займёт минуту.</p>
+      </div>
+      <div class="step">
+        <div class="idx">02</div>
+        <h4 data-i18n="step2_title">Зарегистрируй команду</h4>
+        <p data-i18n="step2_desc">Впиши состав сквада и игровые ID на странице турнира.</p>
+      </div>
+      <div class="step">
+        <div class="idx">03</div>
+        <h4 data-i18n="step3_title">Выходи в зону</h4>
+        <p data-i18n="step3_desc">Следи за расписанием карт и играй.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer id="footer">
+  <div class="wrap footer-inner">
+    <span>© 2026 EX3M ARENA</span>
+    <div class="footer-links">
+      <a href="rules.html" data-i18n="footer_rules">Правила</a>
+      <a href="https://t.me/ex3marena" target="_blank" data-i18n="footer_telegram">Telegram</a>
+      <a href="https://discord.gg/EPPXzFMrc" target="_blank" data-i18n="footer_discord">Discord</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="auth-ui.js"></script>
+<script>
+const STATUS_LABEL = { reg: "Регистрация", live: "Идёт игра", done: "Завершён" };
+const STATUS_CLASS = { reg: "status-reg", live: "status-live", done: "status-done" };
+
+let ALL_TOURNAMENTS = [];
+let REG_COUNTS = {};
+
+function statusLabel(status) {
+  return t('status_' + status) || STATUS_LABEL[status];
+}
+function teamsSuffix() { return t('teams_suffix') || 'команд'; }
+function noPrizeText() { return t('no_prize') || 'Без приза'; }
+
+function cardHTML(tour) {
+  const registered = REG_COUNTS[tour.slug] || 0;
+  const prizeBlock = tour.is_practice
+    ? `<span class="prize-label">${registered}/${tour.slots} ${teamsSuffix()}</span><span class="prize" style="color:var(--text-faint);font-size:15px">${noPrizeText()}</span>`
+    : `<span class="prize-label">${registered}/${tour.slots} ${teamsSuffix()}</span><span class="prize">${tour.prize}</span>`;
+  return `
+    <a class="card" href="tournament.html?slug=${tour.slug}">
+      <div class="card-top">
+        <span class="status ${STATUS_CLASS[tour.status]}">${statusLabel(tour.status)}</span>
+        <span class="card-date">${tour.date_text}</span>
+      </div>
+      <h3>${tour.name}</h3>
+      <div class="tags">
+        <span class="tag">${tour.format}</span>
+        <span class="tag">${tour.tiers}</span>
+      </div>
+      <div class="card-foot">
+        ${prizeBlock}
+      </div>
+    </a>
+  `;
+}
+
+let CURRENT_FILTER = 'all';
+
+function render(filter) {
+  CURRENT_FILTER = filter;
+  const grid = document.getElementById('tournament-grid');
+  const list = filter === 'all' ? ALL_TOURNAMENTS : ALL_TOURNAMENTS.filter(x => x.status === filter);
+  grid.innerHTML = list.length ? list.map(cardHTML).join('') : `<p class="form-note">${t('no_tournaments') || 'Турниров пока нет.'}</p>`;
+}
+
+let PRACTICE_LIST = [];
+
+async function loadData() {
+  const { data: tournaments, error: e1 } = await sb.from('tournaments').select('*').order('created_at', { ascending: false });
+  const { data: regs } = await sb.from('registrations').select('tournament_slug');
+
+  if (e1) {
+    document.getElementById('tournament-grid').innerHTML = '<p class="form-note">Не удалось загрузить турниры: ' + e1.message + '</p>';
+    return;
+  }
+
+  const all = tournaments || [];
+  ALL_TOURNAMENTS = all.filter(x => !x.is_practice);
+  PRACTICE_LIST = all.filter(x => x.is_practice);
+
+  REG_COUNTS = {};
+  (regs || []).forEach(r => { REG_COUNTS[r.tournament_slug] = (REG_COUNTS[r.tournament_slug] || 0) + 1; });
+
+  document.getElementById('stat-count').textContent = ALL_TOURNAMENTS.filter(x => x.status !== 'done').length;
+  document.getElementById('stat-teams').textContent = (regs || []).length;
+
+  render('all');
+
+  if (PRACTICE_LIST.length) {
+    document.getElementById('practice').style.display = 'block';
+    document.getElementById('practice-grid').innerHTML = PRACTICE_LIST.map(cardHTML).join('');
+  }
+}
+
+function onLangChange() {
+  if (ALL_TOURNAMENTS.length || PRACTICE_LIST.length) {
+    render(CURRENT_FILTER);
+    if (PRACTICE_LIST.length) {
+      document.getElementById('practice-grid').innerHTML = PRACTICE_LIST.map(cardHTML).join('');
+    }
+  }
+}
+
+loadData();
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    tab.classList.add('active');
+    render(tab.dataset.filter);
+  });
+});
+</script>
+<script>applyLang();</script>
+
+</body>
+</html>
